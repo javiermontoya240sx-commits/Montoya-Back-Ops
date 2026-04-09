@@ -114,6 +114,9 @@ body{font-family:var(--font-sans);background:var(--off);color:var(--black);font-
 .p-med{background:#fef3c7;color:#92400e}
 .p-low{background:#d1fae5;color:#065f46}
 .owner-chip{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.status-select{height:24px;border:1px solid var(--mid);border-radius:3px;background:var(--white);font-family:var(--font-sans);font-size:11px;color:var(--black);padding:0 4px;cursor:pointer;outline:none;transition:border .15s}
+.status-select:hover{border-color:var(--accent)}
+.status-select:focus{border-color:var(--accent)}
 .mini-avatar{width:18px;height:18px;border-radius:50%;background:var(--accent-light);font-size:9px;font-weight:500;color:var(--black);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
 /* TABLE */
@@ -746,13 +749,17 @@ function renderDashKanban(){
     const items=PROJECTS.filter(p=>p.status===col);
     html+=`<div class="proj-col"><div class="proj-col-head"><h3 style="color:${colColors[col]}">${col}</h3><div class="count-badge">${items.length}</div></div><div class="proj-col-body">`;
     items.slice(0,4).forEach(p=>{
-      html+=`<div class="proj-card" onclick="openDrawer(${p.id})">
-        <div class="proj-card-top"><h4>${p.name}</h4><div class="status-dot ${statusDot(p.status)}"></div></div>
-        <div class="proj-card-meta"><span>${p.client}</span><span>${p.service}</span></div>
-        <div class="progress-bar"><div class="progress-fill ${p.status==='Completed'?'done':''}" style="width:${p.progress}%"></div></div>
+      html+=`<div class="proj-card">
+        <div class="proj-card-top" onclick="openDrawer(${p.id})" style="cursor:pointer"><h4>${p.name}</h4><div class="status-dot ${statusDot(p.status)}"></div></div>
+        <div class="proj-card-meta" onclick="openDrawer(${p.id})" style="cursor:pointer"><span>${p.client}</span><span>${p.service}</span></div>
+        <div class="progress-bar" onclick="openDrawer(${p.id})" style="cursor:pointer"><div class="progress-fill ${p.status==='Completed'?'done':''}" style="width:${p.progress}%"></div></div>
         <div class="proj-card-foot">
           <span class="priority ${priorityClass(p.priority)}">${p.priority}</span>
-          <div class="owner-chip"><div class="mini-avatar">${ownerInitials(p.owner)}</div>${p.owner.split(' ')[0]}</div>
+          <select class="status-select" onchange="changeStatus(${p.id}, this.value)" onclick="event.stopPropagation()">
+            <option value="Upcoming" ${p.status==='Upcoming'?'selected':''}>Upcoming</option>
+            <option value="In Progress" ${p.status==='In Progress'?'selected':''}>In Progress</option>
+            <option value="Completed" ${p.status==='Completed'?'selected':''}>Completed</option>
+          </select>
         </div>
       </div>`;
     });
@@ -970,9 +977,15 @@ function openDrawer(id){
       <div class="activity-item"><div class="act-av">${ownerInitials(p.owner)}</div><div class="act-info"><div><span class="act-who">${p.owner}</span> updated project status</div><div class="act-time">2 days ago</div></div></div>
       <div class="activity-item"><div class="act-av">MM</div><div class="act-info"><div><span class="act-who">Montoya</span> added to calendar</div><div class="act-time">1 week ago</div></div></div>
     </div>
-    <div style="padding-top:8px;display:flex;gap:8px">
-      <button class="btn btn-primary" onclick="markComplete(${p.id})">Mark Complete</button>
-      <button class="btn" onclick="showToast('Editing coming soon.')">Edit Project</button>
+    <div style="padding-top:8px">
+      <div class="form-group" style="margin-bottom:12px">
+        <label style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px">Move to Stage</label>
+        <div style="display:flex;gap:8px">
+          <button class="btn ${p.status==='Upcoming'?'btn-primary':''}" onclick="changeStatus(${p.id},'Upcoming');closeDrawer()">Upcoming</button>
+          <button class="btn ${p.status==='In Progress'?'btn-primary':''}" onclick="changeStatus(${p.id},'In Progress');closeDrawer()">In Progress</button>
+          <button class="btn ${p.status==='Completed'?'btn-primary':''}" onclick="changeStatus(${p.id},'Completed');closeDrawer()">Completed</button>
+        </div>
+      </div>
     </div>
   `;
   document.getElementById('drawer-overlay').classList.add('open');
@@ -1071,9 +1084,23 @@ function addTask(){
   document.getElementById('new-tk-due').value='';
 }
 
+function changeStatus(id, newStatus){
+  const p = PROJECTS.find(p=>p.id===id);
+  if(!p) return;
+  p.status = newStatus;
+  if(newStatus === 'Completed') p.progress = 100;
+  if(newStatus === 'In Progress' && p.progress === 0) p.progress = 10;
+  if(newStatus === 'Upcoming') p.progress = 0;
+  save('mmc-projects', PROJECTS);
+  renderDashKanban();
+  renderStats();
+  renderProjects();
+  showToast(p.name + ' → ' + newStatus);
+}
+
 function markComplete(id){
   const p=PROJECTS.find(p=>p.id===id);
-  if(p){p.status='Completed';p.progress=100;save('mmc-projects',PROJECTS);closeDrawer();renderDashKanban();renderStats();renderProjects();showToast('Project marked complete.');}
+  if(p){p.status='Completed';p.progress=100;save('mmc-projects',PROJECTS);closeDrawer();renderDashKanban();renderStats();renderProjects();populateFilters();showToast('Project marked complete.');}
 }
 
 // PASSWORD
