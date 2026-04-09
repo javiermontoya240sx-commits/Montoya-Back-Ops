@@ -16,6 +16,22 @@
 }
 body{font-family:var(--font-sans);background:var(--off);color:var(--black);font-size:14px;line-height:1.6;display:flex;min-height:100vh;overflow-x:hidden}
 
+/* PASSWORD SCREEN */
+#pw-screen{position:fixed;inset:0;background:var(--black);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#pw-screen.hidden{display:none}
+.pw-box{text-align:center;width:340px}
+.pw-box h1{font-family:var(--font-serif);font-size:36px;color:var(--white);font-weight:400;margin-bottom:4px}
+.pw-box h1 span{font-style:italic;color:var(--accent)}
+.pw-box p{font-size:13px;color:var(--muted);margin-bottom:32px;letter-spacing:.04em}
+.pw-input-wrap{position:relative;margin-bottom:12px}
+.pw-input-wrap input{width:100%;height:48px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:var(--radius);padding:0 48px 0 16px;font-family:var(--font-sans);font-size:15px;color:var(--white);outline:none;transition:border .2s;letter-spacing:.08em}
+.pw-input-wrap input:focus{border-color:var(--accent)}
+.pw-input-wrap input::placeholder{color:rgba(255,255,255,0.25);letter-spacing:normal}
+.pw-submit{width:100%;height:48px;background:var(--accent);border:none;border-radius:var(--radius);font-family:var(--font-sans);font-size:14px;font-weight:500;color:var(--black);cursor:pointer;transition:opacity .15s;letter-spacing:.04em}
+.pw-submit:hover{opacity:.85}
+.pw-error{font-size:12px;color:#e87c7c;margin-top:8px;min-height:18px}
+.pw-divider{width:40px;height:1px;background:rgba(255,255,255,0.1);margin:28px auto}
+
 /* SIDEBAR */
 #sidebar{width:var(--sidebar);min-height:100vh;background:var(--black);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
 .sb-brand{padding:24px 24px 20px;border-bottom:1px solid rgba(255,255,255,0.08)}
@@ -283,6 +299,20 @@ tbody td{padding:12px 16px;font-size:13px}
 </style>
 </head>
 <body>
+
+<!-- PASSWORD SCREEN -->
+<div id="pw-screen">
+  <div class="pw-box">
+    <h1>Montoya<span>.</span></h1>
+    <p>OPERATIONS HUB &nbsp;·&nbsp; PRIVATE ACCESS</p>
+    <div class="pw-divider"></div>
+    <div class="pw-input-wrap">
+      <input type="password" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPw()">
+    </div>
+    <button class="pw-submit" onclick="checkPw()">Enter →</button>
+    <div class="pw-error" id="pw-error"></div>
+  </div>
+</div>
 
 <!-- SIDEBAR -->
 <nav id="sidebar">
@@ -1027,6 +1057,24 @@ function addTask(){
   document.getElementById('new-tk-text').value='';
   document.getElementById('new-tk-assign').value='';
   document.getElementById('new-tk-due').value='';
+}
+
+// PASSWORD
+const CORRECT_PW = '2263cresthilllane';
+function checkPw(){
+  const val = document.getElementById('pw-input').value;
+  if(val === CORRECT_PW){
+    document.getElementById('pw-screen').classList.add('hidden');
+    sessionStorage.setItem('mmc-auth','1');
+  } else {
+    document.getElementById('pw-error').textContent = 'Incorrect password. Try again.';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+// Check if already authenticated this session
+if(sessionStorage.getItem('mmc-auth')==='1'){
+  document.getElementById('pw-screen').classList.add('hidden');
 }
 
 // INIT
